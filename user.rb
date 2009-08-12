@@ -45,7 +45,7 @@ class User
   end
 
   def top_repos_by_favorite_lang
-    favorite_language.repos_sorted_by_popularity[1..10]
+    (favorite_language.repos_sorted_by_popularity - repos)[1..10]
   end
 
 end

@@ -18,6 +18,6 @@ while (line = test.gets)
 
         puts out
     else
-        $stderr.puts "Skipping #{user_id}, it was not found."
+        $stderr.puts "Skipping UID #{user_id}, it was not found."
     end
 end
