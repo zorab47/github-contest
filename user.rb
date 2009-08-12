@@ -14,16 +14,38 @@ class User
 
   def favorite_language
 
-      usages = {}
+      usages = get_language_usages
 
-      repos.each do |r|
-          r.langs do |l|
-              usages[l.lang.name] ||= 0
-              usages[l.lang.name] += l.lines
+      langs = {}
+
+      usages.each do |usage|
+          langs[usage.lang] ||= 0
+          langs[usage.lang] += usage.lines
+      end
+
+      if langs.size > 1
+          langs.sort{|a,b| a.last <=> b.last }.last.first
+      elsif langs.size > 0
+          langs.to_a.last.first
+      else
+          nil
+      end
+  end
+
+  def get_language_usages
+      usages = []
+
+      @repos.each do |repo|
+          repo.langs.each do |usage|
+              usages << usage
           end
       end
 
-      usages.sort{|a,b| a.last <=> b.last}
+      usages
+  end
+
+  def top_repos_by_favorite_lang
+    favorite_language.repos_sorted_by_popularity[1..10]
   end
 
 end

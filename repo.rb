@@ -20,6 +20,10 @@ class Repo
         "Repo ##{id}: #{name}"
     end
 
+    def major_language 
+        langs.sort{ |a,b| a.lines <=> b.lines }.last
+    end
+
     def self.new_repo_from(line)
         id, data = line.chomp.split(":")
         name, date, source = data.split(',')

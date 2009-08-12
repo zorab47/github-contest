@@ -2,10 +2,6 @@
 
 Object.send :undef_method, :id
 
-require 'date'
-require 'lang'
-require 'repo'
-require 'user'
 require 'hub'
 
 def parse_data_line(line)
@@ -29,9 +25,7 @@ def show(records)
 end
 
 github = Hub.new
-github.import_repos_from(File.new("repos.txt", "r"))
-github.import_langs_from(File.new("lang.txt", "r"))
-github.import_users_from(File.new("data.txt", "r"))
+github.import_files
 
 #github.users[1477].repos.each do |repo|
 #    puts repo
@@ -45,7 +39,36 @@ github.import_users_from(File.new("data.txt", "r"))
 #    puts "#{r.watchers.size} watching #{r}"
 #end
 
+  def get_language_usages(user)
+      puts "getting langauge"
+      languages = []
+
+      user.repos.each do |r|
+          puts "\t#{r}"
+          r.langs.each do |l|
+              puts "\t\t#{l}"
+              languages << l
+          end
+      end
+
+      languages
+  end
+
+user = github.users[1477]
+
+puts "Favorite lang for #{user}:" + user.favorite_language.to_s
+puts "Top repos for that lang:"  
+user.top_repos_by_favorite_lang.each do |r|
+    puts "\t#{r}"
+end
 
 
+user = github.users[4242]
+
+puts "Favorite lang for #{user}:" + user.favorite_language.to_s
+puts "Top repos for that lang:"  
+user.top_repos_by_favorite_lang.each do |r|
+    puts "\t#{r}"
+end
 
 

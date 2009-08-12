@@ -22,6 +22,10 @@ class Hub
         
     end
 
+    def import_files
+        import(File.new("repos.txt", 'r'), File.new("lang.txt", "r"), File.new("data.txt", "r"))
+    end
+
     def import(repos, langs, users)
         import_repos_from(repos)
         import_langs_from(langs)
