@@ -1,32 +1,22 @@
 
 class Lang
-    attr_accessor :name, :lines
 
-    def initialize(name, lines)
+    attr_accessor :name, :repos
+
+    def initialize(name)
         @name = name
-        @lines = lines
+        @repos = [] 
     end
 
     def to_s
-        "#{name}: #{lines}"
+        "#{name}"
     end
 
-    def self.new_from(line)
+    def repos_sorted_by_popularity
+        return @sorted_by_popularity if @sorted_by_popularity
 
-        #JavaScript;9759,ActionScript;12781
-        
-        langs = []
-
-        lang_pairs = line.split(',')
-        lang_pairs.each do |pair|
-            langs << Lang.new_from_pair(pair)
-        end
-
-        langs
+        $stderr.puts "Sorting language repos by popularity ..."
+        @sorted_by_popularity = @repos.sort { |a, b| a.watchers.size <=> b.watchers.size }.reverse
     end
 
-    def self.new_from_pair(pair)
-        name, lines = pair.split(';')
-        Lang.new(name, lines.to_i)
-    end
 end

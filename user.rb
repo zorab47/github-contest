@@ -12,4 +12,18 @@ class User
       "User ##{id}"
   end
 
+  def favorite_language
+
+      usages = {}
+
+      repos.each do |r|
+          r.langs do |l|
+              usages[l.lang.name] ||= 0
+              usages[l.lang.name] += l.lines
+          end
+      end
+
+      usages.sort{|a,b| a.last <=> b.last}
+  end
+
 end

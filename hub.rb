@@ -1,19 +1,38 @@
 
 require 'repo'
 require 'user'
+require 'lang'
+require 'lang_usage'
 
 class Hub
 
-    attr_accessor :repos, :users
+    attr_accessor :repos, :users, :langs
 
     def initialize
         @repos = {}
         @users = {}
+        @langs = {}
+    end
+
+    def find_lang(name)
+        @langs[name]
+    end
+
+    def find_popular_repos_by_lang_for(user)
+        
+    end
+
+    def import(repos, langs, users)
+        import_repos_from(repos)
+        import_langs_from(langs)
+        import_users_from(users)
     end
 
     def import_repos_from(repos_file)
 
         $stderr.puts "Parsing repos ..." 
+
+        @repos = {}
 
         while (line = repos_file.gets)
             repo = Repo.new_repo_from(line)
@@ -23,33 +42,46 @@ class Hub
         set_sources
         set_forks
 
-        @repos
+       true
     end
 
     def import_langs_from(langs_file)
 
         $stderr.puts "Parsing langs ..." 
 
-        while (line = langs_file.gets)
+        @langs = {}
 
+        while (line = langs_file.gets)
             repo_id, data = line.chomp.split(':')
             repo_id = repo_id.to_i
 
-            langs = Lang.new_from(data)
-            @repos[repo_id].langs = langs if @repos[repo_id]
+            repo = @repos[repo_id]
+
+            if repo  
+                lang_pairs = data.split(',')
+                lang_pairs.each do |pair|
+                    name, lines = pair.split(';')
+
+                    lang = create_or_find_lang(name)
+                    lang.repos << repo
+
+                    usage = LangUsage.new(lang, lines.to_i)
+                    repo.langs << usage
+                end
+            end
         end
+
+        true
     end
 
     def import_users_from(file)
+
         $stderr.puts "Parsing users and setting watchers ..." 
 
         @users = {}
 
         while (line = file.gets)
-            user_id,repo_id = parse_data_line(line)
-
-            user_id = user_id.to_i
-            repo_id = repo_id.to_i
+            user_id, repo_id = parse_data_line(line)
 
             user = @users[user_id] = User.new(user_id)
 
@@ -58,9 +90,17 @@ class Hub
                 @repos[repo_id].watchers << user
             end
         end
+
+        true
     end
 
     private
+    
+    def parse_data_line(line)
+        user_id, repo_id = line.chomp.split(':')
+
+        [user_id.to_i, repo_id.to_i]
+    end
 
     def set_sources
 
@@ -91,6 +131,12 @@ class Hub
         sources.each_pair do |source, forks|
             @repos[source].forks = forks if @repos[source]
         end
+    end
+
+    def create_or_find_lang(name)
+        return @langs[name] if @langs.has_key?(name)
+
+        @langs[name] = Lang.new(name)
     end
 
 end
