@@ -27,48 +27,11 @@ end
 github = Hub.new
 github.import_files
 
-#github.users[1477].repos.each do |repo|
-#    puts repo
-#    puts "Uses langs: "
-#    repo.langs.each do |lang|
-#        puts lang
-#    end
-#end
+puts " ... done."
 
-#github.find_lang("Ruby").repos_sorted_by_popularity.each do |r|
-#    puts "#{r.watchers.size} watching #{r}"
-#end
+uids = [1477, 4242, 981, 7203, 34174]
 
-  def get_language_usages(user)
-      puts "getting langauge"
-      languages = []
-
-      user.repos.each do |r|
-          puts "\t#{r}"
-          r.langs.each do |l|
-              puts "\t\t#{l}"
-              languages << l
-          end
-      end
-
-      languages
-  end
-
-user = github.users[1477]
-
-puts "Favorite lang for #{user}:" + user.favorite_language.to_s
-puts "Top repos for that lang:"  
-user.top_repos_by_favorite_lang.each do |r|
-    puts "\t#{r}"
+uids.each do |uid|
+    u = github.users[uid]
+    puts "#{u}: " + u.guesses_by_favorite_lang_and_percentage_of_lang.join(",")
 end
-
-
-user = github.users[4242]
-
-puts "Favorite lang for #{user}:" + user.favorite_language.to_s
-puts "Top repos for that lang:"  
-user.top_repos_by_favorite_lang.each do |r|
-    puts "\t#{r}"
-end
-
-

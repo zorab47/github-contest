@@ -17,7 +17,7 @@ class Repo
     end
 
     def to_s
-        "Repo ##{id}: #{name}"
+        "Repo ##{id}"
     end
 
     def major_language 

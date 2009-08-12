@@ -21,6 +21,11 @@ class Hub
     def find_popular_repos_by_lang_for(user)
         
     end
+    
+    def popular_repos
+        return @popular_repos if @popular_repos
+        @popular_repos = repos.values.sort{|a,b| a.watchers.size <=> b.watchers.size }.reverse
+    end
 
     def import_files
         import(File.new("repos.txt", 'r'), File.new("lang.txt", "r"), File.new("data.txt", "r"))
