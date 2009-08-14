@@ -28,6 +28,11 @@ class Hub
         @popular_repos = repos.values.sort{|a,b| a.watchers.size <=> b.watchers.size }.reverse
     end
 
+    def popular_repos_by_forks
+        return @popular_forked_repos if @popular_forked_repos
+        @popular_forked_repos = repos.values.sort_by{|r| r.forks }.reverse
+    end
+
     def import_files
         import(File.new("repos.txt", 'r'), File.new("lang.txt", "r"), File.new("data.txt", "r"))
     end

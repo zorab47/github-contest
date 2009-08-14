@@ -16,12 +16,13 @@ while (line = test.gets)
     if user
 
         guesses = user.guesses_from_related_repo_owners(github.owners)[0..1] # 2 guesses
-        guesses += (user.guesses_by_favorite_lang_and_percentage_of_lang - guesses)[0..2] # 3 guesses
-        guesses += (github.popular_repos - guesses)[0..(9 - guesses.size)] # remainder
+        guesses += (user.guesses_by_favorite_lang_and_percentage_of_lang - guesses)[0..1] # 2 guesses
+        guesses += (github.popular_repos_by_forks - guesses)[0..3] # 4 guesses
+        guesses += (github.popular_repos[0..30].sort_by{rand} - guesses)[0..(9 - guesses.size)] # remainder 2
 
     else
         $stderr.puts "UID #{user_id} not found in database ..."
-        guesses = github.popular_repos[0..9]
+        guesses = github.popular_repos[0..30].sort_by{ rand }[0..9]
     end
     
     out = "#{user_id}:" 
