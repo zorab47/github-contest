@@ -6,12 +6,13 @@ require 'lang_usage'
 
 class Hub
 
-    attr_accessor :repos, :users, :langs
+    attr_accessor :repos, :users, :langs, :owners
 
     def initialize
         @repos = {}
         @users = {}
         @langs = {}
+        @owners = {}
     end
 
     def find_lang(name)
@@ -46,6 +47,10 @@ class Hub
         while (line = repos_file.gets)
             repo = Repo.new_repo_from(line)
             @repos[repo.id] = repo
+            owner = repo.name.split('/').first;
+            @owners[owner] ||= []
+            @owners[owner] << repo
+            repo.owner = owner
         end
 
         set_sources

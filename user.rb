@@ -19,11 +19,23 @@ class User
       if langs.size > 1
           langs.sort{|a,b| a.last <=> b.last }
       elsif langs.size > 0
-          langs.to_a.last
+          langs.to_a
       else
-          nil
+          []
       end
 
+  end
+
+  def guesses_from_related_repo_owners(owners)
+      
+      return [] if repos.empty?
+
+      owner = repos.first.owner
+
+      return [] if owner.nil?
+      
+      # the owner's other repos sorted by watcher count, excluding my repos
+      return (owners[owner].sort.reverse - repos).select{ |r| r.watchers.size > 4 }
   end
 
   def lang_usages
