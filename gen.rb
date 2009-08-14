@@ -22,7 +22,8 @@ while (line = test.gets)
 
     else
         $stderr.puts "UID #{user_id} not found in database ..."
-        guesses = github.popular_repos[0..30].sort_by{ rand }[0..9]
+        guesses = github.popular_repos[0..10].sort_by{ rand }[0..4]
+        guesses += (github.popular_repos_by_forks[0..6].sort_by{rand} - guesses)[0..4] # 3 guesses
     end
     
     out = "#{user_id}:" 
