@@ -95,10 +95,6 @@ class User
             guesses += (key.repos_sorted_by_popularity - repos)[0..count]
         end
 
-        if guesses.size < 10
-            $stderr.puts "#{self} needs more guesses at #{guesses.size}"
-        end
-
         guesses[0..9]
     end
 
