@@ -102,7 +102,7 @@ class Hub
         while (line = file.gets)
             user_id, repo_id = parse_data_line(line)
 
-            user = @users[user_id] = User.new(user_id)
+            user = create_or_find_user(user_id)
 
             if @repos[repo_id]
                 user.repos << @repos[repo_id] 
@@ -156,6 +156,12 @@ class Hub
         return @langs[name] if @langs.has_key?(name)
 
         @langs[name] = Lang.new(name)
+    end
+
+    def create_or_find_user(uid)
+        return @users[uid] if @users.has_key?(uid)
+
+        @users[uid] = User.new(uid)
     end
 
 end
