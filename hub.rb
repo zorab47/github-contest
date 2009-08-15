@@ -3,6 +3,7 @@ require 'repo'
 require 'user'
 require 'lang'
 require 'lang_usage'
+require 'overlap'
 
 class Hub
 
@@ -34,13 +35,14 @@ class Hub
     end
 
     def import_files
-        import(File.new("repos.txt", 'r'), File.new("lang.txt", "r"), File.new("data.txt", "r"))
+        import(File.new("repos.txt", 'r'), File.new("lang.txt", "r"), File.new("data.txt", "r"), File.new("overlaps-50.txt", "r"))
     end
 
-    def import(repos, langs, users)
+    def import(repos, langs, users, overlaps = nil)
         import_repos_from(repos)
         import_langs_from(langs)
         import_users_from(users)
+        import_overlaps_from(overlaps) if overlaps
     end
 
     def import_repos_from(repos_file)
@@ -111,6 +113,54 @@ class Hub
         end
 
         true
+    end
+
+    def import_overlaps_from(file)
+
+        $stderr.puts "Importing repo watcher overlaps ..." 
+
+        while (line = file.gets)
+
+           repo_id, data = line.split(':')
+
+           repo = @repos[repo_id.to_i]
+
+           unless repo.nil?
+           
+               pairs = data.split(';')
+               pairs.each do |pair|
+
+                   related_repo_id, count = pair.split(',')
+                   related_repo = @repos[related_repo_id.to_i]
+
+                   count = count.to_i
+
+                   repo.overlaps << Overlap.new(related_repo, count)
+
+               end
+
+           else
+                
+               $stderr.puts "#{repo_id} could not be loaded."
+
+           end
+
+        end
+
+    end
+
+    def calculate_overlapps_for_repos
+
+        required_overlap = 50
+
+        repos_with_enough_watchers = repos.values.select{ |r| r.watchers.size > required_overlap }
+        repos_to_process = Array.new(repos_with_enough_watchers)
+
+        repos_to_process.each do |r|
+            r.calculate_overlaps(repos_with_enough_watchers, required_overlap)
+            putc '.'
+        end
+
     end
 
     private

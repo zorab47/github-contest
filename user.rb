@@ -26,6 +26,10 @@ class User
 
   end
 
+  def unwatched_fork_sources
+      (repos.collect{ |r| r.source } - repos)
+  end
+
   def guesses_from_related_repo_owners(owners)
       
       return [] if repos.empty?
