@@ -68,11 +68,17 @@ class Repo
         sim = 0.0
 
         # Both repos contain the same major language
-        unless other.major_language.nil? || major_language.nil?
-           if major_language.lang == other.major_language.lang
+        mlang = major_language
+        olang = other.major_language
+        unless olang.nil? || mlang.nil?
+           if mlang.lang == olang.lang
                sim += 0.05
-               diff = major_language.lines > other.major_language.lines ? other.major_language.lines / major_language.lines : major_language.lines / other.major_language.lines
-               sim += 0.15 * diff
+               
+               # provided an additional weighting by the closeness of number of lines
+               unless mlang.lines == 0 && olang.lines == 0
+                   diff = mlang.lines > olang.lines ? olang.lines / mlang.lines : mlang.lines / olang.lines
+                   sim += 0.15 * diff
+               end
            end
         end
 
