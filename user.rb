@@ -3,6 +3,8 @@ class User
 
   attr_accessor :id, :repos
 
+  THRESHOLD = 0.25
+
   def initialize(id)
       @id = id
       @repos = []
@@ -10,6 +12,56 @@ class User
 
   def to_s
       "User ##{id}"
+  end
+
+  #
+  # Provides the top 50 similar repos to this user's repos
+  # sorted by similarity.
+  #
+  def guesses_from_similar_repos(compare)
+
+      # get guesses excluding this user's repos
+      guesses = guesses_from_similar_repos_with_similarity((compare - repos))[0..49]
+
+      # return only the similar non-user repos
+      guesses.collect { |c| c[1] }.uniq
+
+  end
+
+  
+  #
+  # Provides the top 50 comparisons between the user's repos and
+  # the repos provided as @compare@. The format returned is 
+  # [ [similarity, repo, user_repo], ... ]
+  #
+  def guesses_from_similar_repos_with_similarity(compare)
+
+      # store array of [Repo, similarity]
+      comparisons = []
+
+      my_repos = repos
+
+      # if the user follows a great number of repos, shorten it
+      # down to the most popular
+      if repos.size > 19 
+          $stderr.puts "guesses_from_similar_repos_with_similarity: Slimming down #{self}'s repos ... "
+          my_repos = repos.sort.reverse[0..19]
+      end
+
+
+      compare.each do |r|
+
+          my_repos.each do |s|
+
+              sim = s.similar(r)
+              comparisons << [sim, r, s] if sim > THRESHOLD
+
+          end
+
+      end
+
+      comparisons.sort_by { |c| c.first }.reverse
+
   end
 
   def favorite_language

@@ -4,6 +4,8 @@ class Repo
 
     include Comparable
 
+    @@cache = {}
+
     attr_accessor :id, :name, :source, :date, :forks, :langs, :watchers, :owner, :overlaps
 
     def initialize
@@ -21,15 +23,16 @@ class Repo
         @watchers = []
         @owner = nil
         @overlaps = []
+        @major_language = nil
     end
 
     def to_s
-        "Repo ##{id}"
+        "#{name} (#{id})"
     end
 
     def major_language 
         return nil if langs.empty?
-        return @major_language if @major_language
+        return @major_language unless @major_language.nil?
 
         @major_language = langs.sort{ |a,b| a.lines <=> b.lines }.last
     end
@@ -83,7 +86,13 @@ class Repo
 
         unless watchers.empty?
 
-            overlap = other.overlaps.select{ |o| o.repo == self }.first
+            overlap = nil
+            other.overlaps.each do |o|
+                if o.repo == self
+                    overlap = o
+                    break
+                end
+            end
 
             if overlap 
                 percent_overlap = overlap.overlap * 1.0 / (watchers.size + other.watchers.size - overlap.overlap)
