@@ -1,9 +1,6 @@
 #!/usr/bin/ruby
 
-Object.send :undef_method, :id
-
-require 'rubygems'
-require 'ruby-prof'
+#Object.send :undef_method, :id
 
 require 'hub'
 
@@ -46,8 +43,6 @@ def suggest_for(user_id, github)
     puts out
 end
 
-#RubyProf.start
-
 $stdout.sync = true
 
 github = Hub.new
@@ -61,15 +56,10 @@ while (line = test.gets)
     user_ids << line.chomp.to_i
 end
 
-user_ids.reverse.take(2019).each do |id|
+user_ids.drop(865).take(635).each do |id|
     suggest_for(id, github)
 end
 
 
 
-#result = RubyProf.stop
-
-# Print a flat profile to text
-#printer = RubyProf::GraphPrinter.new(result)
-#printer.print(STDOUT, 0)
 
