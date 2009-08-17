@@ -14,6 +14,31 @@ class User
       "User ##{id}"
   end
 
+  def recommendations(github)
+      guesses = []
+
+      guesses = unwatched_fork_sources.uniq.take(4) # limit to 4
+      guesses = guesses.select{ |g| g.is_a?(Repo) }
+
+      guesses += (guesses_by_favorite_lang_and_percentage_of_lang - guesses).take(1) # 1 guess
+
+      if guesses.size < 10
+          guesses += (guesses_from_similar_repos(github.repos.values) - guesses).take(10 - guesses.size) # remaining
+      end
+
+      if guesses.size < 10
+          guesses += (github.popular_repos - guesses).take(10 - guesses.size) # remaining
+      end
+
+      #$stderr.puts "#{id}: " + guesses.join(", ")
+
+      out = "#{id}:" + guesses.collect{ |r| r.id }.join(",")
+
+      puts out
+
+      guesses
+  end
+
   #
   # Provides the top 50 similar repos to this user's repos
   # sorted by similarity.
@@ -21,7 +46,7 @@ class User
   def guesses_from_similar_repos(compare)
 
       # get guesses excluding this user's repos
-      guesses = guesses_from_similar_repos_with_similarity((compare - repos))[0..49]
+      guesses = guesses_from_similar_repos_with_similarity((compare - repos)).take(50)
 
       # return only the similar non-user repos
       guesses.collect { |c| c[1] }.uniq
@@ -45,23 +70,35 @@ class User
       # down to the most popular
       if repos.size > 19 
           $stderr.puts "guesses_from_similar_repos_with_similarity: Slimming down #{self}'s repos ... "
-          my_repos = repos.sort.reverse[0..19]
+          my_repos = repos.sort.reverse.take(20)
       end
 
+      # speed up comparisons by excluding repos with few watchers
+      compare = compare.delete_if { |r| r.watchers.size < 2 }
 
       compare.each do |r|
 
           my_repos.each do |s|
 
               sim = s.similar(r)
-              comparisons << [sim, r, s] if sim > THRESHOLD
+
+              if sim > THRESHOLD
+                  comparisons << [sim, r, s]
+              end
+
 
           end
 
       end
 
+      comparisons = remove_forks_of_same_repo(comparisons)
+
       comparisons.sort_by { |c| c.first }.reverse
 
+  end
+
+  def remove_forks_of_same_repo(comparisons)
+      comparisons.select { |c| c[1].source.nil? || c[1].watchers.size > 24 }
   end
 
   def favorite_language

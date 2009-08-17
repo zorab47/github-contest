@@ -19,10 +19,6 @@ class Hub
     def find_lang(name)
         @langs[name]
     end
-
-    def find_popular_repos_by_lang_for(user)
-        
-    end
     
     def popular_repos
         return @popular_repos if @popular_repos
@@ -88,6 +84,13 @@ class Hub
 
                     usage = LangUsage.new(lang, lines.to_i)
                     repo.langs << usage
+                end
+
+                # set the repo's major language, if possible
+                unless repo.langs.empty?
+                    major_usage = repo.langs.sort{ |a,b| a.lines <=> b.lines }.last
+                    repo.major_language = major_usage.lang
+                    repo.major_lang_usage = major_usage
                 end
             end
         end

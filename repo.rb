@@ -6,7 +6,7 @@ class Repo
 
     @@cache = {}
 
-    attr_accessor :id, :name, :source, :date, :forks, :langs, :watchers, :owner, :overlaps
+    attr_accessor :id, :name, :source, :date, :forks, :langs, :watchers, :owner, :overlaps, :major_language, :major_lang_usage
 
     def initialize
     end
@@ -24,17 +24,11 @@ class Repo
         @owner = nil
         @overlaps = []
         @major_language = nil
+        @major_lang_usage = nil
     end
 
     def to_s
         "#{name} (#{id})"
-    end
-
-    def major_language 
-        return nil if langs.empty?
-        return @major_language unless @major_language.nil?
-
-        @major_language = langs.sort{ |a,b| a.lines <=> b.lines }.last
     end
 
     def <=>(other)
@@ -68,8 +62,8 @@ class Repo
         sim = 0.0
 
         # Both repos contain the same major language
-        mlang = major_language
-        olang = other.major_language
+        mlang = major_lang_usage
+        olang = other.major_lang_usage
         unless olang.nil? || mlang.nil?
            if mlang.lang == olang.lang
                sim += 0.05
@@ -92,17 +86,15 @@ class Repo
 
         unless watchers.empty?
 
-            overlap = nil
-            other.overlaps.each do |o|
-                if o.repo == self
-                    overlap = o
-                    break
-                end
-            end
+            overlap_idx = other.overlaps.index { |o| o.repo == self }
 
-            if overlap 
-                percent_overlap = overlap.overlap * 1.0 / (watchers.size + other.watchers.size - overlap.overlap)
-                sim += 5 * percent_overlap
+            unless overlap_idx.nil? 
+                overlap = overlaps[overlap_idx]
+
+                unless overlap.nil?
+                    percent_overlap = overlap.overlap * 1.0 / (watchers.size + other.watchers.size - overlap.overlap)
+                    sim += 5 * percent_overlap
+                end
             end
 
         end
@@ -110,7 +102,13 @@ class Repo
         unless forks.empty?
             # fork of other or visa versa
             if forks.include?(other) || other.forks.include?(self)
-                sim += 0.4
+                sim += 0.25
+            end
+        end
+
+        unless source.nil?
+            if source == other || other.source == self
+                sim += 0.7
             end
         end
 
