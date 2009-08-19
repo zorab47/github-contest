@@ -2,6 +2,7 @@
 require 'repo'
 require 'user'
 require 'lang'
+require 'owner'
 require 'lang_usage'
 require 'overlap'
 
@@ -50,9 +51,10 @@ class Hub
         while (line = repos_file.gets)
             repo = Repo.new_repo_from(line)
             @repos[repo.id] = repo
-            owner = repo.name.split('/').first;
-            @owners[owner] ||= []
-            @owners[owner] << repo
+            owner_name = repo.name.split('/').first
+
+            owner = find_or_create_owner(owner_name)
+            owner.repos << repo
             repo.owner = owner
         end
 
@@ -60,6 +62,12 @@ class Hub
         set_forks
 
        true
+    end
+
+    def find_or_create_owner(name)
+        return @owners[name] if @owners[name]
+
+        @owners[name] = Owner.new(name)
     end
 
     def import_langs_from(langs_file)

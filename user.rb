@@ -1,176 +1,183 @@
 
 class User
 
-  attr_accessor :id, :repos
+    attr_accessor :id, :repos
 
-  THRESHOLD = 0.25
+    THRESHOLD = 0.25
+    @@verbose = false
 
-  def initialize(id)
-      @id = id
-      @repos = []
-  end
+    def initialize(id)
+        @id = id
+        @repos = []
+    end
 
-  def to_s
+    def to_s
       "User ##{id}"
-  end
+    end
 
-  def recommendations(github)
-      guesses = []
+    def recommendations(github)
+        guesses = []
 
-      guesses = unwatched_fork_sources.uniq.take(4) # limit to 4
-      guesses = guesses.select{ |g| g.is_a?(Repo) }
+        guesses = unwatched_fork_sources.select{ |r| r.is_a?(Repo) }.uniq[0..3] # limit to 4
 
-      guesses += (guesses_by_favorite_lang_and_percentage_of_lang - guesses).take(1) # 1 guess
+        guesses += (guesses_from_related_repo_owners - guesses)[0..4] # 5 guesses
 
-      if guesses.size < 10
-          guesses += (guesses_from_similar_repos(github.repos.values) - guesses).take(10 - guesses.size) # remaining
-      end
+        guesses += (guesses_by_favorite_lang_and_percentage_of_lang - guesses)[0..0] # 1 guess
 
-      if guesses.size < 10
-          guesses += (github.popular_repos - guesses).take(10 - guesses.size) # remaining
-      end
+        if guesses.size < 10
+            guesses += (guesses_from_similar_repos(github.repos.values) - guesses)[0..10 - guesses.size] # remaining
+        end
 
-      #$stderr.puts "#{id}: " + guesses.join(", ")
+        if guesses.size < 10
+            guesses += (github.popular_repos - guesses)[0..10 - guesses.size] # fill in
+        end
 
-      out = "#{id}:" + guesses.collect{ |r| r.id }.join(",")
+        out = "#{id}:" + guesses[0..9].collect{ |r| r.id }.join(",")
 
-      puts out
+        puts out
 
-      guesses
-  end
+        guesses
+    end
 
-  #
-  # Provides the top 50 similar repos to this user's repos
-  # sorted by similarity.
-  #
-  def guesses_from_similar_repos(compare)
+    #
+    # Provides the top 50 similar repos to this user's repos
+    # sorted by similarity.
+    #
+    def guesses_from_similar_repos(compare)
 
-      # get guesses excluding this user's repos
-      guesses = guesses_from_similar_repos_with_similarity((compare - repos)).take(50)
+        # get guesses excluding this user's repos
+        guesses = guesses_from_similar_repos_with_similarity((compare - repos))[0..49]
 
-      # return only the similar non-user repos
-      guesses.collect { |c| c[1] }.uniq
+        # return only the similar non-user repos
+        guesses.collect { |c| c[1] }.uniq
 
-  end
-
-  
-  #
-  # Provides the top 50 comparisons between the user's repos and
-  # the repos provided as @compare@. The format returned is 
-  # [ [similarity, repo, user_repo], ... ]
-  #
-  def guesses_from_similar_repos_with_similarity(compare)
-
-      # store array of [Repo, similarity]
-      comparisons = []
-
-      my_repos = repos
-
-      # if the user follows a great number of repos, shorten it
-      # down to the most popular
-      if repos.size > 19 
-          $stderr.puts "guesses_from_similar_repos_with_similarity: Slimming down #{self}'s repos ... "
-          my_repos = repos.sort.reverse.take(20)
-      end
-
-      # speed up comparisons by excluding repos with few watchers
-      compare = compare.delete_if { |r| r.watchers.size < 2 }
-
-      compare.each do |r|
-
-          my_repos.each do |s|
-
-              sim = s.similar(r)
-
-              if sim > THRESHOLD
-                  comparisons << [sim, r, s]
-              end
+    end
 
 
-          end
+    #
+    # Provides the top 50 comparisons between the user's repos and
+    # the repos provided as @compare@. The format returned is 
+    # [ [similarity, repo, user_repo], ... ]
+    #
+    def guesses_from_similar_repos_with_similarity(compare)
 
-      end
+        # store array of [Repo, similarity]
+        comparisons = []
 
-      comparisons = remove_forks_of_same_repo(comparisons)
+        my_repos = repos
 
-      comparisons.sort_by { |c| c.first }.reverse
+        # if the user follows a great number of repos, shorten it
+        # down to the most popular
+        if repos.size > 19 
+            $stderr.puts "guesses_from_similar_repos_with_similarity: Slimming down #{self}'s repos ... " if $hub_verbose
+            my_repos = repos.sort.reverse[0..19]
+        end
 
-  end
+        # speed up comparisons by excluding repos with few watchers
+        compare = compare.delete_if { |r| r.watchers.size < 2 }
 
-  def remove_forks_of_same_repo(comparisons)
-      comparisons.select { |c| c[1].source.nil? || c[1].watchers.size > 24 }
-  end
+        compare.each do |r|
 
-  def favorite_language
+            my_repos.each do |s|
 
-      langs = lang_usages
+                sim = s.similar(r)
 
-      if langs.size > 1
-          langs.sort{|a,b| a.last <=> b.last }
-      elsif langs.size > 0
-          langs.to_a
-      else
-          []
-      end
+                if sim > THRESHOLD
+                    comparisons << [sim, r, s]
+                end
 
-  end
 
-  def unwatched_fork_sources
-      (repos.collect{ |r| r.source } - repos)
-  end
+            end
 
-  def guesses_from_related_repo_owners(owners)
-      
-      return [] if repos.empty?
+        end
 
-      owner = repos.first.owner
+        comparisons = remove_forks_of_same_repo(comparisons)
 
-      return [] if owner.nil?
-      
-      # the owner's other repos sorted by watcher count, excluding my repos
-      return (owners[owner].sort.reverse - repos).select{ |r| r.watchers.size > 4 }
-  end
+        comparisons.sort_by { |c| c.first }.reverse
 
-  def lang_usages
+    end
 
-      usages = get_language_usages
+    def remove_forks_of_same_repo(comparisons)
+        comparisons.select { |c| c[1].source.nil? || c[1].watchers.size > 24 }
+    end
 
-      langs = {}
+    def favorite_language
 
-      usages.each do |usage|
-          langs[usage.lang] ||= 0
-          langs[usage.lang] += usage.lines
-      end
+        langs = lang_usages
 
-      langs
-  end
+        if langs.size > 1
+            langs.sort{|a,b| a.last <=> b.last }
+        elsif langs.size > 0
+            langs.to_a
+        else
+            []
+        end
 
-  def get_language_usages
+    end
 
-      usages = []
+    def unwatched_fork_sources
+        (repos.collect{ |r| r.source } - repos)
+    end
 
-      @repos.each do |repo|
-          repo.langs.each do |usage|
-              usages << usage
-          end
-      end
+    def guesses_from_related_repo_owners
+        $stderr.puts "guesses_from_related_repo_owners" if @@verbose
+        owner_repos = repos_from_owners_of_watched_repos
 
-      usages
-  end
+        owner_repos.sort_by { |r| r.watchers.size }.reverse
+    end
 
-  def top_repos_by_favorite_lang
-      if favorite_language
-          (favorite_language.repos_sorted_by_popularity - repos)[0..9]
-      else
-          []
-      end
-  end
+    def repos_from_owners_of_watched_repos
+        owner_repos = []
+
+        $stderr.puts " repos_from_owners_of_watched_repos .." if @@verbose
+        repos.each do |r|
+            $stderr.puts " Got repos from #{r.owner}" if @@verbose
+            owner_repos << r.owner.repos
+        end
+
+        owner_repos.flatten - self.repos
+    end
+
+    def lang_usages
+
+        usages = get_language_usages
+
+        langs = {}
+
+        usages.each do |usage|
+            langs[usage.lang] ||= 0
+            langs[usage.lang] += usage.lines
+        end
+
+        langs
+    end
+
+    def get_language_usages
+
+        usages = []
+
+        @repos.each do |repo|
+            repo.langs.each do |usage|
+                usages << usage
+            end
+        end
+
+        usages
+    end
+
+    def top_repos_by_favorite_lang
+        if favorite_language
+            (favorite_language.repos_sorted_by_popularity - repos)[0..9]
+        else
+            []
+        end
+    end
 
     def guesses_by_favorite_lang_and_percentage_of_lang
 
         total_lines = 0
         guesses = []
-        
+
         langs = lang_usages
 
         langs.each_pair do |key, value|
@@ -192,12 +199,12 @@ class User
     end
 
 
-  def friends
-      repos.collect{|repo| repo.watchers}.flatten.uniq
-  end
+    def friends
+        repos.collect{|repo| repo.watchers}.flatten.uniq
+    end
 
-  def friends_repos
-      friends.collect{|f| f.repos}.flatten.uniq.sort{|a,b| a.watchers <=> b.watchers}.reverse
-  end
+    def friends_repos
+        friends.collect{|f| f.repos}.flatten.uniq.sort{|a,b| a.watchers <=> b.watchers}.reverse
+    end
 
 end

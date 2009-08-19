@@ -1,4 +1,5 @@
 require 'lang'
+require 'owner'
 
 class Repo
 
@@ -86,15 +87,11 @@ class Repo
 
         unless watchers.empty?
 
-            overlap_idx = other.overlaps.index { |o| o.repo == self }
+            overlap = other.overlaps.select { |o| o.repo == self }.first
 
-            unless overlap_idx.nil? 
-                overlap = overlaps[overlap_idx]
-
-                unless overlap.nil?
-                    percent_overlap = overlap.overlap * 1.0 / (watchers.size + other.watchers.size - overlap.overlap)
-                    sim += 5 * percent_overlap
-                end
+            unless overlap.nil? 
+                percent_overlap = overlap.overlap * 1.0 / (watchers.size + other.watchers.size - overlap.overlap)
+                sim += 5 * percent_overlap
             end
 
         end
