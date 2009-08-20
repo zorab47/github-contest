@@ -1,4 +1,4 @@
-#!/home/earl/lib/jruby-1.3.1/bin/jruby -J-Xmx2000m -J-Xss10m
+#!/home/earl/lib/jruby-1.3.1/bin/jruby
 
 require 'hub'
 
@@ -16,49 +16,40 @@ while (line = test.gets)
     user_ids << line.chomp.to_i
 end
 
-#user_ids = user_ids.shuffle
-
-half = (user_ids.size / 2).to_i
-
-first = user_ids[0..half-1]
-second = user_ids[half..user_ids.size - 1]
+#user_ids = user_ids.sort_by { rand }[0..9]
 
 threads = []
 
-threads << Thread.new do
-    first.each do |uid|
-        if github.users.key?(uid)
-            user = github.users[uid]
-            recs = user.recommendations(github)
+until user_ids.empty? do
 
-            if $hub_verbose
-                user.repos.each { |r| puts r.to_s }
-                recs.each { |r| puts r.to_s }
+    if (Thread.list - [Thread.main]).size < 2
+        uid = user_ids.pop
+
+        threads << Thread.new do
+
+            if github.users.key?(uid)
+                user = github.users[uid]
+                recs = user.recommendations(github)
+
+                if $hub_verbose
+                    user.repos.each { |r| puts r.to_s }
+                    recs.each { |r| puts r.to_s }
+                else
+                    $stderr.putc '.'
+                end
             else
-                $stderr.putc '.'
+                $stderr.puts "UID #{uid} not found in database ..."
             end
-        else
-            $stderr.puts "UID #{uid} not found in database ..."
-        end
-    end
-end
 
-threads << Thread.new do
-    second.each do |uid|
-        if github.users.key?(uid)
-            user = github.users[uid]
-            recs = user.recommendations(github)
+            # wake the main thread to create a new worker thread
+            Thread.main.run
 
-            if $hub_verbose
-                user.repos.each { |r| puts r.to_s }
-                recs.each { |r| puts r.to_s }
-            else
-                $stderr.putc '.'
-            end
-        else
-            $stderr.puts "UID #{uid} not found in database ..."
         end
+
+    else
+        sleep # until any thread completes
     end
+
 end
 
 threads.each do |thread|

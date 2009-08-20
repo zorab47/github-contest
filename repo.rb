@@ -12,7 +12,7 @@ class Repo
     def initialize
     end
 
-    def initialize(id, name, source, date)
+    def initialize(id = nil, name = nil, source = nil, date = nil)
         fields ||= {}
 
         @id = id
@@ -120,5 +120,18 @@ class Repo
 
         # Parsing the date to an object is SLOW
         # Repo.new({ :id => id.to_i, :name => name, :source => source.to_i, :date => Date.parse(date) })
+    end
+
+    def self.restrict_repos_from_each_owner(repositories, count = 2)
+
+        repos_from_owner = {}
+
+        repositories.each do |r|
+            repos_from_owner[r.owner]  ||= []
+            repos_from_owner[r.owner] << r
+        end
+
+        repos_from_owner.each_value.collect { |v| v[0..count - 1] }.flatten
+
     end
 end

@@ -20,7 +20,7 @@ class User
 
         guesses = unwatched_fork_sources.select{ |r| r.is_a?(Repo) }.uniq[0..3] # limit to 4
 
-        guesses += (guesses_from_related_repo_owners - guesses)[0..4] # 5 guesses
+        guesses += (guesses_from_related_repo_owners - guesses)[0..3] # 4 guesses
 
         guesses += (guesses_by_favorite_lang_and_percentage_of_lang - guesses)[0..0] # 1 guess
 
@@ -93,7 +93,7 @@ class User
 
         comparisons = remove_forks_of_same_repo(comparisons)
 
-        comparisons.sort_by { |c| c.first }.reverse
+        comparisons.uniq.sort_by { |c| c.first }.reverse
 
     end
 
@@ -123,7 +123,7 @@ class User
         $stderr.puts "guesses_from_related_repo_owners" if @@verbose
         owner_repos = repos_from_owners_of_watched_repos
 
-        owner_repos.sort_by { |r| r.watchers.size }.reverse
+        owner_repos.uniq.sort_by { |r| r.watchers.size }.reverse
     end
 
     def repos_from_owners_of_watched_repos
@@ -195,16 +195,42 @@ class User
             guesses += (key.repos_sorted_by_popularity - repos)[0..count]
         end
 
-        guesses[0..9]
+        guesses.uniq[0..9]
     end
 
 
     def friends
-        repos.collect{|repo| repo.watchers}.flatten.uniq
+        repos.collect{ |repo| repo.watchers }.flatten.uniq
     end
 
     def friends_repos
         friends.collect{|f| f.repos}.flatten.uniq.sort{|a,b| a.watchers <=> b.watchers}.reverse
+    end
+
+    #
+    # Located any users watching more than one repos this user is watching
+    # ranked by number of shared repos
+    #
+    def find_users_with_shared_repos
+
+        (friends - [self]).sort_by do |f|
+            f.repos.select { |r| repos.collect { |s| s.id }.include?(r.id) }.size
+        end.reverse
+
+    end
+
+    #
+    # Located any users watching more than one repos this user is watching
+    # ranked by number of shared repos
+    #
+    def overlapping_repos_from_users_with_shared_repos
+        users = find_users_with_shared_repos[0..1]
+
+        if users.size > 1
+            ((users[0].repos & users[1].repos) - repos).sort.reverse
+        else
+            []
+        end
     end
 
 end
