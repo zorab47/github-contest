@@ -2,6 +2,7 @@
 
 $LOAD_PATH << './lib'
 
+require 'progressbar'
 require 'hub'
 
 $stdout.sync = true
@@ -19,13 +20,17 @@ while (line = test.gets)
 end
 
 #user_ids = user_ids.sort_by { rand }[0..9]
+user_ids = user_ids.reverse
 
 threads = []
+
+pbar = ProgressBar.new("Calculating Recommendations", user_ids.size)
 
 until user_ids.empty? do
 
     if (Thread.list - [Thread.main]).size < 2
         uid = user_ids.pop
+        pbar.inc
 
         threads << Thread.new do
 
@@ -39,10 +44,10 @@ until user_ids.empty? do
                     user.repos.each { |r| puts r.to_s }
                     recs.each { |r| puts r.to_s }
                 else
-                    $stderr.putc '.'
+                    #$stderr.putc '.'
                 end
             else
-                $stderr.puts "UID #{uid} not found in database ..."
+                #$stderr.puts "UID #{uid} not found in database ..."
             end
 
             # wake the main thread to create a new worker thread
@@ -59,3 +64,5 @@ end
 threads.each do |thread|
     thread.join
 end
+
+pbar.finish
