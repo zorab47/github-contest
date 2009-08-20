@@ -1,5 +1,5 @@
 
-require 'repo'
+require 'repo.rb'
 require 'user'
 require 'lang'
 require 'owner'

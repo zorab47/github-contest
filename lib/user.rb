@@ -1,3 +1,4 @@
+require 'repo'
 
 class User
 
@@ -18,11 +19,11 @@ class User
     def recommendations(github)
         guesses = []
 
-        guesses = unwatched_fork_sources.select{ |r| r.is_a?(Repo) }.uniq[0..3] # limit to 4
+        guesses = unwatched_fork_sources.uniq[0..3] # limit to 4
 
-        guesses += (guesses_from_related_repo_owners - guesses)[0..3] # 4 guesses
+        guesses += (guesses_from_related_repo_owners - guesses)[0..2] # 3 guesses
 
-        guesses += (guesses_by_favorite_lang_and_percentage_of_lang - guesses)[0..0] # 1 guess
+        guesses += (overlapping_repos_from_users_with_shared_repos - guesses)[0..2] # limit to 3
 
         if guesses.size < 10
             guesses += (guesses_from_similar_repos(github.repos.values) - guesses)[0..10 - guesses.size] # remaining
@@ -31,10 +32,6 @@ class User
         if guesses.size < 10
             guesses += (github.popular_repos - guesses)[0..10 - guesses.size] # fill in
         end
-
-        out = "#{id}:" + guesses[0..9].collect{ |r| r.id }.join(",")
-
-        puts out
 
         guesses
     end
@@ -116,14 +113,15 @@ class User
     end
 
     def unwatched_fork_sources
-        (repos.collect{ |r| r.source } - repos)
+        unwatched_sources = (repos.collect{ |r| r.source } - repos)
+        unwatched_sources.select { |r| r.is_a?(Repo) }
     end
 
     def guesses_from_related_repo_owners
         $stderr.puts "guesses_from_related_repo_owners" if @@verbose
         owner_repos = repos_from_owners_of_watched_repos
 
-        owner_repos.uniq.sort_by { |r| r.watchers.size }.reverse
+        Repo.restrict_repos_from_each_owner(owner_repos).uniq.sort_by { |r| r.watchers.size }.reverse
     end
 
     def repos_from_owners_of_watched_repos

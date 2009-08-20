@@ -1,5 +1,7 @@
 #!/home/earl/lib/jruby-1.3.1/bin/jruby
 
+$LOAD_PATH << './lib'
+
 require 'hub'
 
 github = Hub.new

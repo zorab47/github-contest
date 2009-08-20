@@ -131,7 +131,7 @@ class Repo
             repos_from_owner[r.owner] << r
         end
 
-        repos_from_owner.each_value.collect { |v| v[0..count - 1] }.flatten
+        repos_from_owner.values.collect { |v| v[0..count - 1] }.flatten
 
     end
 end

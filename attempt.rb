@@ -1,5 +1,7 @@
 #!/home/earl/lib/jruby-1.3.1/bin/jruby
 
+$LOAD_PATH << './lib'
+
 require 'hub'
 
 $stdout.sync = true
@@ -29,7 +31,9 @@ until user_ids.empty? do
 
             if github.users.key?(uid)
                 user = github.users[uid]
-                recs = user.recommendations(github)
+                recs = user.recommendations(github)[0..9]
+
+                puts "#{user.id}:" + recs.collect { |r| r.id }.join(',')
 
                 if $hub_verbose
                     user.repos.each { |r| puts r.to_s }
