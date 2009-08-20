@@ -24,7 +24,7 @@ user_ids = user_ids.reverse
 
 threads = []
 
-pbar = ProgressBar.new("Calculating Recommendations", user_ids.size)
+pbar = ProgressBar.new("Recommending", user_ids.size)
 
 until user_ids.empty? do
 

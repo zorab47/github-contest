@@ -17,13 +17,14 @@ class User
     end
 
     def recommendations(github)
+
         guesses = []
 
-        guesses = unwatched_fork_sources.uniq[0..3] # limit to 4
+        guesses = unwatched_fork_sources.uniq[0..2] # limit to 3
 
         guesses += (guesses_from_related_repo_owners - guesses)[0..2] # 3 guesses
 
-        guesses += (overlapping_repos_from_users_with_shared_repos - guesses)[0..2] # limit to 3
+        guesses += (overlapping_repos_from_users_with_shared_repos - guesses)[0..3] # limit to 4
 
         if guesses.size < 10
             guesses += (guesses_from_similar_repos(github.repos.values) - guesses)[0..10 - guesses.size] # remaining
@@ -114,7 +115,7 @@ class User
 
     def unwatched_fork_sources
         unwatched_sources = (repos.collect{ |r| r.source } - repos)
-        unwatched_sources.select { |r| r.is_a?(Repo) }
+        unwatched_sources.select { |r| r.is_a?(Repo) }.uniq.sort.reverse
     end
 
     def guesses_from_related_repo_owners
