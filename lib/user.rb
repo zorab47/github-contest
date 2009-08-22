@@ -22,9 +22,9 @@ class User
 
         guesses = unwatched_fork_sources.uniq[0..2] # limit to 3
 
-        #guesses += (overlapping_repos_from_users_with_shared_repos - guesses)[0..5] # limit to 4
+        guesses += (overlapping_repos_from_users_with_shared_repos - guesses)[0..1] # limit to 2
 
-        #guesses += (guesses_from_related_repo_owners - guesses)[0..3] # 3 guesses
+        guesses += (guesses_from_related_repo_owners - guesses)[0..1] # 2 guesses
 
         if guesses.size < 10
             guesses += (guesses_from_similar_repos(github.repos.values) - guesses)[0..10 - guesses.size] # remaining
@@ -111,7 +111,7 @@ class User
             special[r.id] += 1
         end
 
-        special
+        special.delete_if { |id, count| count < 2 }
     end
 
     def remove_forks_of_same_repo(comparisons)

@@ -23,7 +23,7 @@ class TestUser < Test::Unit::TestCase
         user1.expects(:find_users_with_shared_repos).returns([user2, user3, user4])
         user2.expects(:find_users_with_shared_repos).returns([])
 
-        assert_equal({ repo1.id => 1, repo2.id => 3, repo3.id => 1, repo4.id => 2 }, user1.collect_shared_repos_with_counts)
+        assert_equal({ repo2.id => 3, repo4.id => 2 }, user1.collect_shared_repos_with_counts)
         assert_equal({}, user2.collect_shared_repos_with_counts)
     end
 
