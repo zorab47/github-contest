@@ -56,9 +56,10 @@ class Repo
     end
 
     #
-    # factor of similarity to another repository
+    # factor of similarity to another repository and provide
+    # additional tweaks based on the intended user
     #
-    def similar(other)
+    def similar(other, special_repos = [])
 
         sim = 0.0
 
@@ -68,7 +69,7 @@ class Repo
         unless olang.nil? || mlang.nil?
            if mlang.lang == olang.lang
                sim += 0.05
-               
+
                # provided an additional weighting by the closeness of number of lines
                unless mlang.lines == 0 && olang.lines == 0
                    diff = mlang.lines > olang.lines ? olang.lines / mlang.lines : mlang.lines / olang.lines
@@ -77,7 +78,7 @@ class Repo
            end
         end
 
-        # Both repos are "owned" by the same account like 'rails/rails' 
+        # Both repos are "owned" by the same account like 'rails/rails'
         # and 'rails/open_id_authentication'
         if owner
             if owner == other.owner
@@ -89,7 +90,7 @@ class Repo
 
             overlap = other.overlaps.select { |o| o.repo == self }.first
 
-            unless overlap.nil? 
+            unless overlap.nil?
                 percent_overlap = overlap.overlap * 1.0 / (watchers.size + other.watchers.size - overlap.overlap)
                 sim += 5 * percent_overlap
             end
@@ -106,6 +107,12 @@ class Repo
         unless source.nil?
             if source == other || other.source == self
                 sim += 0.7
+            end
+        end
+
+        unless special_repos.empty?
+            if special_repos.has_key?(self.id) && special_repos.has_key?(other.id)
+                sim += 0.7 * (special_repos[self.id] + special_repos[other.id])
             end
         end
 
