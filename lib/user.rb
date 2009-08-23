@@ -1,4 +1,5 @@
 require 'repo'
+require 'set'
 
 class User
 
@@ -9,7 +10,7 @@ class User
 
     def initialize(id)
         @id = id
-        @repos = []
+        @repos = Set.new
     end
 
     def to_s
@@ -18,7 +19,7 @@ class User
 
     def recommendations(github)
 
-        guesses = []
+        guesses = Set.new
 
         guesses = unwatched_fork_sources.uniq[0..2] # limit to 3
 
@@ -31,7 +32,7 @@ class User
         end
 
         if guesses.size < 10
-            guesses += (github.popular_repos - guesses)[0..10 - guesses.size] # fill in
+            guesses += (github.popular_repos - guesses)[0..10 - guesses.size].to_set # fill in
         end
 
         guesses
@@ -44,10 +45,10 @@ class User
     def guesses_from_similar_repos(compare)
 
         # get guesses excluding this user's repos
-        guesses = guesses_from_similar_repos_with_similarity((compare - repos))[0..49]
+        guesses = guesses_from_similar_repos_with_similarity((compare.to_set - repos))[0..49]
 
         # return only the similar non-user repos
-        guesses.collect { |c| c[1] }.uniq
+        guesses.collect { |c| c[1] }
 
     end
 
@@ -133,7 +134,7 @@ class User
     end
 
     def unwatched_fork_sources
-        unwatched_sources = (repos.collect{ |r| r.source } - repos)
+        unwatched_sources = (repos.collect{ |r| r.source }.to_set - repos)
         unwatched_sources.select { |r| r.is_a?(Repo) }.uniq.sort.reverse
     end
 
@@ -141,16 +142,16 @@ class User
         $stderr.puts "guesses_from_related_repo_owners" if @@verbose
         owner_repos = repos_from_owners_of_watched_repos
 
-        Repo.restrict_repos_from_each_owner(owner_repos).uniq.sort_by { |r| r.watchers.size }.reverse
+        Repo.restrict_repos_from_each_owner(owner_repos).sort_by { |r| r.watchers.size }.reverse
     end
 
     def repos_from_owners_of_watched_repos
-        owner_repos = []
+        owner_repos = Set.new
 
         $stderr.puts " repos_from_owners_of_watched_repos .." if @@verbose
         repos.each do |r|
             $stderr.puts " Got repos from #{r.owner}" if @@verbose
-            owner_repos << r.owner.repos
+            owner_repos += r.owner.repos
         end
 
         owner_repos.flatten - self.repos
@@ -218,7 +219,7 @@ class User
 
 
     def friends
-        repos.collect{ |repo| repo.watchers }.flatten.uniq
+        repos.collect{ |repo| repo.watchers }.to_set.flatten
     end
 
     def friends_repos

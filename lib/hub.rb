@@ -5,6 +5,7 @@ require 'lang'
 require 'owner'
 require 'lang_usage'
 require 'overlap'
+require 'set'
 
 class Hub
 
@@ -209,7 +210,7 @@ class Hub
         end
 
         sources.each_pair do |source, forks|
-            @repos[source].forks = forks if @repos[source]
+            @repos[source].forks = forks.to_set if @repos[source]
         end
     end
 

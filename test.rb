@@ -49,7 +49,7 @@ uids.sort_by { rand }[0..9].each do |uid|
     recs = []
     top_repos_from_shared_users = []
 
-    recs = user.recommendations(github)[0..9]
+    recs = user.recommendations(github).to_a[0..9]
     top_repos_from_shared_users = (user.find_users_with_shared_repos[0..1].collect { |u| (u.repos - user.repos).sort.reverse[0..9] }.flatten)
 
     puts "\tWatching: "

@@ -27,4 +27,19 @@ class TestUser < Test::Unit::TestCase
         assert_equal({}, user2.collect_shared_repos_with_counts)
     end
 
+    def test_friends
+
+        r1 = Repo.new(1)
+        r1.watchers = Set.new [1, 2, 3, 4, 5]
+
+        r2 = Repo.new(2)
+        r2.watchers = Set.new [1, 6]
+
+        user1 = User.new(1)
+        user1.expects(:repos).returns([r1, r2].to_set)
+
+        assert_equal [1, 2, 3, 4, 5, 6].to_set, user1.friends
+
+    end
+
 end

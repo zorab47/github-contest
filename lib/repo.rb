@@ -1,5 +1,6 @@
 require 'lang'
 require 'owner'
+require 'set'
 
 class Repo
 
@@ -19,9 +20,9 @@ class Repo
         @name = name
         @source = source
         @date = date
-        @forks = []
+        @forks = Set.new
         @langs = []
-        @watchers = []
+        @watchers = Set.new
         @owner = nil
         @overlaps = []
         @major_language = nil
@@ -33,7 +34,20 @@ class Repo
     end
 
     def <=>(other)
-        watchers.size <=> other.watchers.size
+
+        unless other.is_a?(Repo)
+            return -1
+        end
+
+        if watchers.is_a?(Array) && other.watchers.is_a?(Array)
+            return watchers.size <=> other.watchers.size
+        elsif watchers.is_a?(Array)
+            return -1
+        elsif other.watchers.is_a?(Array) 
+            return 1
+        else
+            return 0
+        end
     end
 
     #
@@ -57,9 +71,14 @@ class Repo
 
     #
     # factor of similarity to another repository and provide
-    # additional tweaks based on the intended user
+    # additional tweaks based on the intended user via
+    # the special_repos variable
     #
     def similar(other, special_repos = [])
+
+        unless other.is_a?(Repo)
+            raise "Cannot compare a repo to a non-repo object"
+        end
 
         sim = 0.0
 
@@ -138,7 +157,7 @@ class Repo
             repos_from_owner[r.owner] << r
         end
 
-        repos_from_owner.values.collect { |v| v[0..count - 1] }.flatten
+        repos_from_owner.values.collect { |v| v[0..count - 1] }.flatten.to_set
 
     end
 end
