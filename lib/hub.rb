@@ -52,7 +52,7 @@ class Hub
         while (line = repos_file.gets)
             repo = Repo.new_repo_from(line)
             @repos[repo.id] = repo
-            owner_name = repo.name.split('/').first
+            owner_name = repo.calculate_owner_name
 
             owner = find_or_create_owner(owner_name)
             owner.repos << repo
@@ -92,12 +92,12 @@ class Hub
                     lang.repos << repo
 
                     usage = LangUsage.new(lang, lines.to_i)
-                    repo.langs << usage
+                    repo.lang_usages << usage
                 end
 
                 # set the repo's major language, if possible
-                unless repo.langs.empty?
-                    major_usage = repo.langs.sort{ |a,b| a.lines <=> b.lines }.last
+                unless repo.lang_usages.empty?
+                    major_usage = repo.lang_usages.sort{ |a,b| a.lines <=> b.lines }.last
                     repo.major_language = major_usage.lang
                     repo.major_lang_usage = major_usage
                 end
@@ -111,16 +111,14 @@ class Hub
 
         $stderr.puts "Parsing users and setting watchers ..." 
 
-        @users = {}
-
         while (line = file.gets)
             user_id, repo_id = parse_data_line(line)
 
             user = create_or_find_user(user_id)
 
-            if @repos[repo_id]
-                user.repos << @repos[repo_id] 
-                @repos[repo_id].watchers << user
+            if repos[repo_id]
+                user.repos << repos[repo_id] 
+                repos[repo_id].watchers << user
             end
         end
 
@@ -187,10 +185,12 @@ class Hub
 
         $stderr.puts "Setting repo sources ..." 
 
-        @repos.each_value do |value|
-            if value.source && value.source > 0 && @repos.has_key?(value.source)
+        repos.each_value do |value|
+            if value.source && value.source > 0 && repos.has_key?(value.source)
                 source_id = value.source
-                value.source = @repos[value.source]
+                value.source = repos[value.source]
+            else
+                value.source = nil
             end
         end
     end
@@ -201,7 +201,7 @@ class Hub
 
         sources = {}
         
-        @repos.each_value do |repo|
+        repos.each_value do |repo|
             if repo.source && repo.source.is_a?(Repo)
                 id = repo.source.id
                 sources[id] ||= []
@@ -210,7 +210,7 @@ class Hub
         end
 
         sources.each_pair do |source, forks|
-            @repos[source].forks = forks.to_set if @repos[source]
+            repos[source].forks = forks.to_set if repos[source]
         end
     end
 

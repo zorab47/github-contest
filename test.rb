@@ -1,8 +1,9 @@
-#!/home/earl/lib/jruby-1.3.1/bin/jruby
+#!/home/earl/lib/jruby-1.3.1/bin/jruby -J-Xmx1000m
 
 $LOAD_PATH << './lib'
 
 require 'hub'
+require 'set'
 
 $stdout.sync = true
 $hub_verbose = true
@@ -42,15 +43,18 @@ while (line = test_file.gets)
 end
 
 
-uids.sort_by { rand }[0..9].each do |uid|
+uids.sort_by { rand }[0..2].each do |uid|
     user = github.users[uid]
     puts user.to_s + " watching #{user.repos.size} repos:"
 
-    recs = []
     top_repos_from_shared_users = []
 
-    recs = user.recommendations(github).to_a[0..9]
-    top_repos_from_shared_users = (user.find_users_with_shared_repos[0..1].collect { |u| (u.repos - user.repos).sort.reverse[0..9] }.flatten)
+    recs = user.recommendations(github) || Set.new
+    top_repos_from_shared_users = (user.find_users_with_shared_repos[0..1].collect { |u| (u.repos - user.repos).to_a.sort.reverse[0..9] }.flatten)
+
+    if (recs.size > 10)
+        raise "Too many recomendations."
+    end
 
     puts "\tWatching: "
     user.repos.each do |r|

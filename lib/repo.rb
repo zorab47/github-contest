@@ -8,20 +8,19 @@ class Repo
 
     @@cache = {}
 
-    attr_accessor :id, :name, :source, :date, :forks, :langs, :watchers, :owner, :overlaps, :major_language, :major_lang_usage
+    attr_accessor :id, :name, :source, :date, :forks, :lang_usages, :watchers, :owner, :overlaps, :major_language, :major_lang_usage
 
     def initialize
     end
 
     def initialize(id = nil, name = nil, source = nil, date = nil)
-        fields ||= {}
 
         @id = id
         @name = name
         @source = source
         @date = date
         @forks = Set.new
-        @langs = []
+        @lang_usages = Set.new
         @watchers = Set.new
         @owner = nil
         @overlaps = []
@@ -130,13 +129,17 @@ class Repo
         end
 
         unless special_repos.empty?
-            if special_repos.has_key?(self.id) && special_repos.has_key?(other.id)
-                sim += 0.7 * (special_repos[self.id] + special_repos[other.id])
+            if special_repos.has_key?(self) && special_repos.has_key?(other)
+                sim += 0.7 * (special_repos[self] + special_repos[other])
             end
         end
 
         sim
 
+    end
+
+    def calculate_owner_name
+        @name.split('/').first
     end
 
     def self.new_repo_from(line)

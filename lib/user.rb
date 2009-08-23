@@ -21,18 +21,18 @@ class User
 
         guesses = Set.new
 
-        guesses = unwatched_fork_sources.uniq[0..2] # limit to 3
+        guesses += unwatched_fork_sources.uniq[0..2] # limit to 3
 
-        guesses += (overlapping_repos_from_users_with_shared_repos - guesses)[0..1] # limit to 2
+        guesses += (overlapping_repos_from_users_with_shared_repos - guesses.to_a)[0..1] # limit to 2
 
-        guesses += (guesses_from_related_repo_owners - guesses)[0..1] # 2 guesses
+        guesses += (guesses_from_related_repo_owners - guesses.to_a)[0..1] # 2 guesses
 
         if guesses.size < 10
-            guesses += (guesses_from_similar_repos(github.repos.values) - guesses)[0..10 - guesses.size] # remaining
+            guesses += (guesses_from_similar_repos(github.repos.values) - guesses.to_a)[0..9 - guesses.size] # remaining
         end
 
         if guesses.size < 10
-            guesses += (github.popular_repos - guesses)[0..10 - guesses.size].to_set # fill in
+            guesses += (github.popular_repos - guesses.to_a)[0..9 - guesses.size] # fill in
         end
 
         guesses
@@ -48,7 +48,7 @@ class User
         guesses = guesses_from_similar_repos_with_similarity((compare.to_set - repos))[0..49]
 
         # return only the similar non-user repos
-        guesses.collect { |c| c[1] }
+        guesses.collect { |c| c[1] }.uniq
 
     end
 
@@ -67,29 +67,29 @@ class User
 
         $stderr.puts "\tspecial_repos has #{special.size} entries" if $hub_verbose
 
-        # store array of [Repo, similarity]
-        comparisons = []
-
         my_repos = repos
 
         # if the user follows a great number of repos, shorten it
         # down to the most popular
-        if repos.size > 19
+        if my_repos.size > 19
             $stderr.puts "guesses_from_similar_repos_with_similarity: Slimming down #{self}'s repos ... " if $hub_verbose
-            my_repos = repos.sort.reverse[0..19]
+            my_repos = my_repos.sort.reverse[0..19]
         end
 
         # speed up comparisons by excluding repos with few watchers
         compare = compare.delete_if { |r| r.watchers.size < 2 }
 
-        compare.each do |r|
+        # store array of [similarity, repo1, my_repo1]
+        comparisons = []
 
-            my_repos.each do |s|
+        compare.each do |repo|
 
-                sim = s.similar(r, special)
+            my_repos.each do |my_repo|
+
+                sim = my_repo.similar(repo, special)
 
                 if sim > THRESHOLD
-                    comparisons << [sim, r, s]
+                    comparisons << [sim, repo, my_repo]
                 end
 
             end
@@ -98,21 +98,24 @@ class User
 
         comparisons = remove_forks_of_same_repo(comparisons)
 
-        comparisons.uniq.sort_by { |c| c.first }.reverse
+        comparisons.sort_by { |c| c.first }.reverse
 
     end
 
     def collect_shared_repos_with_counts
         special = {}
 
-        special_repos = find_users_with_shared_repos.collect { |u| u.repos }.flatten
+        users = find_users_with_shared_repos
+
+        special_repos = users.collect { |u| u.repos.to_a }.flatten
+
         # loop through and count each occurance of a repo
         special_repos.each do |r|
-            special[r.id] ||= 0
-            special[r.id] += 1
+            special[r] ||= 0
+            special[r] += 1
         end
 
-        special.delete_if { |id, count| count < 2 }
+        special.delete_if { |r, count| count < 2 }
     end
 
     def remove_forks_of_same_repo(comparisons)
@@ -124,11 +127,9 @@ class User
         langs = lang_usages
 
         if langs.size > 1
-            langs.sort{|a,b| a.last <=> b.last }
-        elsif langs.size > 0
-            langs.to_a
+            langs.sort{ |a,b| a.last <=> b.last }.last.first
         else
-            []
+            nil
         end
 
     end
@@ -173,15 +174,13 @@ class User
 
     def get_language_usages
 
-        usages = []
+        usages = Set.new
 
-        @repos.each do |repo|
-            repo.langs.each do |usage|
-                usages << usage
-            end
+        usages += repos.collect do |repo|
+            repo.lang_usages
         end
 
-        usages
+        usages.flatten
     end
 
     def top_repos_by_favorite_lang
@@ -191,32 +190,6 @@ class User
             []
         end
     end
-
-    def guesses_by_favorite_lang_and_percentage_of_lang
-
-        total_lines = 0
-        guesses = []
-
-        langs = lang_usages
-
-        langs.each_pair do |key, value|
-            total_lines += value
-        end
-
-        langs.each_pair do |key, value|
-            begin
-                count = value.to_f / total_lines * 10
-                count = count.to_i
-            rescue
-                count = 0
-            end
-
-            guesses += (key.repos_sorted_by_popularity - repos)[0..count]
-        end
-
-        guesses.uniq[0..9]
-    end
-
 
     def friends
         repos.collect{ |repo| repo.watchers }.to_set.flatten
@@ -232,7 +205,7 @@ class User
     #
     def find_users_with_shared_repos
 
-        @users_with_shared_repos = (friends - [self]).sort_by do |f|
+        (friends - [self]).sort_by do |f|
             f.repos.select { |r| repos.collect { |s| s.id }.include?(r.id) }.size
         end.reverse
 

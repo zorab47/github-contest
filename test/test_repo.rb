@@ -46,7 +46,14 @@ class TestRepo < Test::Unit::TestCase
         repos = [repo1, repo2, repo3, repo4, 4]
 
         assert_equal [repo3, repo1, repo4, repo2, 4], repos.sort
+    end
 
+    def test_calculate_owner_name
+
+        r1 = Repo.new(1)
+        r1.name = "name/repository_name"
+
+        assert_equal "name", r1.calculate_owner_name
 
     end
 end

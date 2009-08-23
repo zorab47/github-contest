@@ -1,4 +1,4 @@
-#!/home/earl/lib/jruby-1.3.1/bin/jruby
+#!/home/earl/lib/jruby-1.3.1/bin/jruby -J-Xmx2000m
 
 $LOAD_PATH << './lib'
 
@@ -19,7 +19,6 @@ while (line = test.gets)
     user_ids << line.chomp.to_i
 end
 
-#user_ids = user_ids.sort_by { rand }[0..9]
 user_ids = user_ids.reverse
 
 threads = []
@@ -36,7 +35,7 @@ until user_ids.empty? do
 
             if github.users.key?(uid)
                 user = github.users[uid]
-                recs = user.recommendations(github)[0..9]
+                recs = user.recommendations(github)
 
                 puts "#{user.id}:" + recs.collect { |r| r.id }.join(',')
 
