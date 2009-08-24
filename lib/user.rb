@@ -14,7 +14,7 @@ class User
     end
 
     def to_s
-      "User ##{id}"
+      "UID ##{id}"
     end
 
     def recommendations(github)
@@ -51,7 +51,6 @@ class User
         guesses.collect { |c| c[1] }.uniq
 
     end
-
 
     #
     # Provides the top 50 comparisons between the user's repos and
@@ -136,14 +135,15 @@ class User
 
     def unwatched_fork_sources
         unwatched_sources = (repos.collect{ |r| r.source }.to_set - repos)
-        unwatched_sources.select { |r| r.is_a?(Repo) }.uniq.sort.reverse
+        unwatched_sources -= [nil]
+        unwatched_sources.sort.reverse
     end
 
     def guesses_from_related_repo_owners
         $stderr.puts "guesses_from_related_repo_owners" if @@verbose
         owner_repos = repos_from_owners_of_watched_repos
 
-        Repo.restrict_repos_from_each_owner(owner_repos).sort_by { |r| r.watchers.size }.reverse
+        Repo.restrict_repos_from_each_owner(owner_repos).sort.reverse
     end
 
     def repos_from_owners_of_watched_repos
@@ -152,7 +152,7 @@ class User
         $stderr.puts " repos_from_owners_of_watched_repos .." if @@verbose
         repos.each do |r|
             $stderr.puts " Got repos from #{r.owner}" if @@verbose
-            owner_repos += r.owner.repos
+            owner_repos += r.owner.repos if r.owner
         end
 
         owner_repos.flatten - self.repos
@@ -185,7 +185,7 @@ class User
 
     def top_repos_by_favorite_lang
         if favorite_language
-            (favorite_language.repos_sorted_by_popularity - repos)[0..9]
+            (favorite_language.repos - repos).sort.reverse[0..9]
         else
             []
         end

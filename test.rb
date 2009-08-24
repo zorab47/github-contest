@@ -1,4 +1,4 @@
-#!/home/earl/lib/jruby-1.3.1/bin/jruby -J-Xmx1000m
+##!/home/earl/lib/jruby-1.3.1/bin/jruby -J-Xmx1000m
 
 $LOAD_PATH << './lib'
 

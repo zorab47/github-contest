@@ -222,4 +222,83 @@ class TestUser < Test::Unit::TestCase
 
     end
 
+    def test_overlapping_repos_from_users_with_shared_repos
+
+        shared_users = [
+            stub(:repos => [1, 2, 5, 7, 8, 9, 3].to_set),
+            stub(:repos => [4, 6, 2, 9, 3].to_set),
+            stub(:repos => [1, 7, 8].to_set)
+        ]
+
+        user = User.new(1)
+        user.expects(:find_users_with_shared_repos).returns(shared_users)
+        user.expects(:repos).returns([1, 4, 7].to_set)
+
+        expected = [9, 3, 2]
+
+        assert_equal expected, user.overlapping_repos_from_users_with_shared_repos
+
+        user2 = User.new(2)
+        user2.expects(:find_users_with_shared_repos).returns([])
+
+        assert_equal [], user2.overlapping_repos_from_users_with_shared_repos
+
+    end
+
+    def test_unwatched_fork_sources
+
+        repo1 = Repo.new(1)
+        repo1.stubs(:watchers).returns((0..10).to_set)
+        repo2 = Repo.new(2)
+        repo2.stubs(:watchers).returns((0..4).to_set)
+        repo3 = Repo.new(3)
+
+        repo4 = mock('repo', :source => repo1)
+        repo5 = mock('repo', :source => nil)
+        repo6 = mock('repo', :source => repo2)
+
+        user = User.new(1)
+        user.expects(:repos).returns([repo4, repo5, repo6].to_set).twice
+
+        expected = [ repo1, repo2 ]
+
+        assert_equal expected, user.unwatched_fork_sources
+
+        user2 = User.new(2)
+        user2.stubs(:repos).returns([].to_set)
+
+        assert_equal [], user2.unwatched_fork_sources
+
+    end
+
+    def test_repos_from_owners_of_watched_repos
+
+        owner1 = Owner.new('one')
+        owner2 = Owner.new('two')
+
+        repo1 = Repo.new(1)
+        repo1.stubs(:owner).returns(owner1)
+        repo2 = Repo.new(2)
+        repo2.stubs(:owner).returns(owner2)
+        repo3 = Repo.new(3)
+        repo3.stubs(:owner).returns(owner2)
+        repo4 = Repo.new(4)
+        repo4.stubs(:owner).returns(nil)
+
+        repo5 = Repo.new(5)
+        repo6 = Repo.new(6)
+        repo7 = Repo.new(7)
+
+        owner1.expects(:repos).returns([repo1, repo5, repo6].to_set)
+        owner2.expects(:repos).returns([repo7, repo3].to_set).twice
+
+        user = User.new(1)
+        user.stubs(:repos).returns([repo1, repo2, repo3, repo4].to_set)
+
+        expected = [ repo5, repo6, repo7 ].to_set
+
+        assert_equal expected, user.repos_from_owners_of_watched_repos
+
+    end
+
 end
