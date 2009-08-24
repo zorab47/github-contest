@@ -21,11 +21,11 @@ class User
 
         guesses = Set.new
 
-        guesses += unwatched_fork_sources.uniq[0..2] # limit to 3
+        guesses += unwatched_fork_sources.uniq[0..3] # limit to 4
 
-        guesses += (overlapping_repos_from_users_with_shared_repos - guesses.to_a)[0..1] # limit to 2
+        guesses += (overlapping_repos_from_users_with_shared_repos - guesses.to_a)[0..2] # limit to 3
 
-        guesses += (guesses_from_related_repo_owners - guesses.to_a)[0..1] # 2 guesses
+        guesses += (guesses_from_related_repo_owners - guesses.to_a)[0..2] # 3 guesses
 
         if guesses.size < 10
             guesses += (guesses_from_similar_repos(github.repos.values) - guesses.to_a)[0..9 - guesses.size] # remaining
