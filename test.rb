@@ -10,21 +10,6 @@ $hub_verbose = true
 github = Hub.new
 github.import_files
 
-leader_guesses = {}
-
-leader_results = File.new('leader-results.txt', 'r')
-
-while (line = leader_results.gets)
-    uid, data = line.chomp.split(':')
-    uid = uid.to_i
-
-    repos = data.split(',').collect do |r|
-        r.to_i
-    end
-
-    leader_guesses[uid] = repos
-end
-
 # 24690
 # 3694   http://github.com/michelsen
 # 41849  http://github.com/mighdoll
@@ -104,35 +89,4 @@ uids.sort_by { rand }[0..9].each do |uid|
         puts out
     end
 
-    puts "\tLeader:"
-    unless leader_guesses[user.id].nil?
-        leader_guesses[user.id].each do |rid|
-            r = github.repos[rid]
-
-            out = "\t\t"
-
-            if recs.include?(r)
-                out += "y"
-            else
-                out += " "
-            end
-
-            out += " #{r}"
-
-            puts out
-        end
-    else
-        puts "\t\tNo guesses."
-    end
-
-    puts "\n\n"
-    # user.repos.sort_by{ |r| r.name }.each do |r|
-    #     puts "\t#{r}"
-    # 
-    #     unless r.overlaps.empty?
-    #         r.overlaps.sort_by { |o| o.overlap }.reverse[0..10].each do |o|
-    #             puts "\t\t#{o.overlap} users overlap in #{o.repo}"
-    #         end
-    #     end
-    # end
 end

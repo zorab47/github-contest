@@ -32,7 +32,7 @@ class Hub
     end
 
     def import_files
-        import(File.new("repos.txt", 'r'), File.new("lang.txt", "r"), File.new("data.txt", "r"), File.new("overlaps-50.txt", "r"))
+        import(File.new("data/repos.txt", 'r'), File.new("data/lang.txt", "r"), File.new("data/data.txt", "r"), File.new("data/overlaps-50.txt", "r"))
     end
 
     def import(repos, langs, users, overlaps = nil)

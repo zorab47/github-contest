@@ -11,7 +11,7 @@ $hub_verbose = false
 github = Hub.new
 github.import_files
 
-test = File.new("test.txt", "r")
+test = File.new("data/test.txt", "r")
 
 user_ids = []
 
@@ -19,7 +19,6 @@ while (line = test.gets)
     user_ids << line.chomp.to_i
 end
 
-#user_ids = user_ids.sort_by { rand }[0..9]
 user_ids = user_ids.reverse
 
 threads = []
