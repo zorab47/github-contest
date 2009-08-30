@@ -12,5 +12,6 @@ Factors I considered:
 ** Programming language similarities
 ** Number of users overlapping within the repository's watchers and the watchers a user knows of via his watched repositories
 ** Whether or not the repository is fork or source of the user's repository
+* Popular repositories (both by number of watchers and number of forks)
 * Unwatched fork source repositories (as suggested by "cardmagic":http://github.com/cardmagic)
 
