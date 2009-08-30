@@ -173,6 +173,39 @@ class Hub
 
     end
 
+    def likely_similar_languages(base_lang)
+
+        possible = Set.new
+
+        # find users with the base lang as a favorite language
+        users_with_favorite_lang = users.values.select do |u|
+            u.favorite_language == base_lang
+        end
+
+        counts = {}
+
+        # collect possible langs
+        users_with_favorite_lang.each do |u|
+            u.get_language_usages.each do |usage|
+                lang = usage.lang
+                counts[lang] ||= 0
+                counts[lang] += 1
+            end
+        end
+
+        base_lang_count = counts[base_lang]
+        counts.delete(base_lang)
+
+        output = []
+
+        counts.each_pair do |k,v|
+            output << [k, v * 1.0 / base_lang_count]
+        end
+
+        output.sort_by { |o| o[1] }.reverse
+
+    end
+
     private
     
     def parse_data_line(line)

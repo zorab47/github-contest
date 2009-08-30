@@ -27,7 +27,7 @@ class User
 
         guesses += (guesses_from_related_repo_owners - guesses.to_a)[0..2] # 3 guesses
 
-        if guesses.size < 10 && guesses.size > 3
+        if guesses.size < 10
             guesses += (guesses_from_similar_repos(github.repos.values) - guesses.to_a)[0..9 - guesses.size] # remaining
         end
 

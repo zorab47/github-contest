@@ -68,6 +68,10 @@ class Repo
 
     end
 
+    def distance(num1, num2)
+        Math.sqrt((num1 - num2) ** 2 + (num2 - num1) ** 2)
+    end
+
     #
     # factor of similarity to another repository and provide
     # additional tweaks based on the intended user via
@@ -90,7 +94,7 @@ class Repo
 
                # provided an additional weighting by the closeness of number of lines
                unless mlang.lines == 0 && olang.lines == 0
-                   diff = mlang.lines > olang.lines ? olang.lines / mlang.lines : mlang.lines / olang.lines
+                   diff = distance(mlang.lines, olang.lines)
                    sim += 0.15 * diff
                end
            end

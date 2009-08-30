@@ -10,4 +10,9 @@ class LangUsage
     def to_s
         "#{lang}: #{lines}"
     end
+
+    def <=>(other)
+        lines <=> other.lines
+    end
+
 end

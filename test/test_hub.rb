@@ -178,4 +178,70 @@ class TestHub < Test::Unit::TestCase
 
     end
 
+    def test_likely_similar_languages
+
+        ruby = Lang.new("Ruby")
+        js = Lang.new("JavaScript")
+        c = Lang.new("C")
+        python = Lang.new("Python")
+        css = Lang.new("CSS")
+
+        u1 = User.new(1)
+        u1_usages = [
+            LangUsage.new(ruby, 1000),
+            LangUsage.new(js, 200)
+        ]
+        u1.expects(:favorite_language).returns(ruby)
+        u1.expects(:get_language_usages).returns(u1_usages)
+
+        u2 = User.new(2)
+        u2_usages = [
+            LangUsage.new(ruby, 5000),
+            LangUsage.new(js, 1000),
+            LangUsage.new(css, 100)
+        ]
+        u2.expects(:favorite_language).returns(ruby)
+        u2.expects(:get_language_usages).returns(u2_usages)
+
+        u3 = User.new(3)
+        u3.expects(:favorite_language).returns(js)
+
+        u4 = User.new(4)
+        u4_usages = [
+            LangUsage.new(ruby, 10000),
+            LangUsage.new(css, 100),
+            LangUsage.new(js, 1000),
+            LangUsage.new(python, 7462)
+        ]
+        u4.expects(:favorite_language).returns(ruby)
+        u4.expects(:get_language_usages).returns(u4_usages)
+
+        u5 = User.new(5)
+        u5_usages = [
+            LangUsage.new(ruby, 10000)
+        ]
+        u5.expects(:favorite_language).returns(ruby)
+        u5.expects(:get_language_usages).returns(u5_usages)
+
+        users = {
+            1 => u1,
+            2 => u2,
+            3 => u3,
+            4 => u4,
+            5 => u5
+        }
+
+        hub = Hub.new
+        hub.expects(:users).returns(users)
+
+        expected = [
+            [js,     3.0/4.0],
+            [css,    2.0/4.0],
+            [python, 1.0/4.0]
+        ]
+
+        assert_equal expected, hub.likely_similar_languages(ruby)
+
+    end
+
 end
