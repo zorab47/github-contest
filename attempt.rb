@@ -11,7 +11,7 @@ $hub_verbose = false
 github = Hub.new
 github.import_files
 
-test = File.new("test.txt", "r")
+test = File.new("data/test.txt", "r")
 
 user_ids = []
 
@@ -27,6 +27,7 @@ pbar = ProgressBar.new("Recommending", user_ids.size)
 
 until user_ids.empty? do
 
+    # Limit thread count to two (the number of CPUs available)
     if (Thread.list - [Thread.main]).size < 2
         uid = user_ids.pop
         pbar.inc
@@ -42,11 +43,9 @@ until user_ids.empty? do
                 if $hub_verbose
                     user.repos.each { |r| puts r.to_s }
                     recs.each { |r| puts r.to_s }
-                else
-                    #$stderr.putc '.'
                 end
             else
-                #$stderr.puts "UID #{uid} not found in database ..."
+                $stderr.puts "UID #{uid} not found in database ..."
             end
 
             # wake the main thread to create a new worker thread

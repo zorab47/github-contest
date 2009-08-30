@@ -1,4 +1,4 @@
-##!/home/earl/lib/jruby-1.3.1/bin/jruby -J-Xmx1000m
+#!/home/earl/lib/jruby-1.3.1/bin/jruby -J-Xmx1000m
 
 $LOAD_PATH << './lib'
 
@@ -10,21 +10,6 @@ $hub_verbose = true
 
 github = Hub.new
 github.import_files
-
-leader_guesses = {}
-
-leader_results = File.new('leader-results.txt', 'r')
-
-while (line = leader_results.gets)
-    uid, data = line.chomp.split(':')
-    uid = uid.to_i
-
-    repos = data.split(',').collect do |r|
-        r.to_i
-    end
-
-    leader_guesses[uid] = repos
-end
 
 # 24690
 # 3694   http://github.com/michelsen
@@ -106,27 +91,6 @@ uids.sort_by { rand }[0..2].each do |uid|
         out += " #{r}"
 
         puts out
-    end
-
-    puts "\tLeader:"
-    unless leader_guesses[user.id].nil?
-        leader_guesses[user.id].each do |rid|
-            r = github.repos[rid]
-
-            out = "\t\t"
-
-            if recs.include?(r)
-                out += "y"
-            else
-                out += " "
-            end
-
-            out += " #{r}"
-
-            puts out
-        end
-    else
-        puts "\t\tNo guesses."
     end
 
     puts "\n\n"
