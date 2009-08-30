@@ -1,0 +1,16 @@
+h1. Github 2009 Contest
+
+This repository is my submission for the "Github Contest":http://contest.github.com.
+
+h2. About My Solution
+
+Factors I considered:
+
+* A repository owner's other repositories.
+* Overlapping repositories from two users deemed similar to the user in question.
+* Guesses from repositories similar to a user's own repositories as determined by:
+** Programming language similarities
+** Number of users overlapping within the repository's watchers and the watchers a user knows of via his watched repositories
+** Whether or not the repository is fork or source of the user's repository
+* Unwatched fork source repositories (as suggested by "cardmagic":http://github.com/cardmagic)
+
