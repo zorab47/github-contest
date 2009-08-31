@@ -1,4 +1,4 @@
-#!/home/earl/lib/jruby-1.3.1/bin/jruby
+#!/home/earl/lib/jruby-1.3.1/bin/jruby -J-Xmx2000m
 
 $LOAD_PATH << './lib'
 
@@ -27,6 +27,7 @@ pbar = ProgressBar.new("Recommending", user_ids.size)
 
 until user_ids.empty? do
 
+    # Limit thread count to two (the number of CPUs available)
     if (Thread.list - [Thread.main]).size < 2
         uid = user_ids.pop
         pbar.inc
@@ -35,18 +36,16 @@ until user_ids.empty? do
 
             if github.users.key?(uid)
                 user = github.users[uid]
-                recs = user.recommendations(github)[0..9]
+                recs = user.recommendations(github)
 
                 puts "#{user.id}:" + recs.collect { |r| r.id }.join(',')
 
                 if $hub_verbose
                     user.repos.each { |r| puts r.to_s }
                     recs.each { |r| puts r.to_s }
-                else
-                    #$stderr.putc '.'
                 end
             else
-                #$stderr.puts "UID #{uid} not found in database ..."
+                $stderr.puts "UID #{uid} not found in database ..."
             end
 
             # wake the main thread to create a new worker thread

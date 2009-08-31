@@ -5,6 +5,7 @@ require 'lang'
 require 'owner'
 require 'lang_usage'
 require 'overlap'
+require 'set'
 
 class Hub
 
@@ -51,7 +52,7 @@ class Hub
         while (line = repos_file.gets)
             repo = Repo.new_repo_from(line)
             @repos[repo.id] = repo
-            owner_name = repo.name.split('/').first
+            owner_name = repo.calculate_owner_name
 
             owner = find_or_create_owner(owner_name)
             owner.repos << repo
@@ -91,12 +92,12 @@ class Hub
                     lang.repos << repo
 
                     usage = LangUsage.new(lang, lines.to_i)
-                    repo.langs << usage
+                    repo.lang_usages << usage
                 end
 
                 # set the repo's major language, if possible
-                unless repo.langs.empty?
-                    major_usage = repo.langs.sort{ |a,b| a.lines <=> b.lines }.last
+                unless repo.lang_usages.empty?
+                    major_usage = repo.lang_usages.sort{ |a,b| a.lines <=> b.lines }.last
                     repo.major_language = major_usage.lang
                     repo.major_lang_usage = major_usage
                 end
@@ -110,16 +111,14 @@ class Hub
 
         $stderr.puts "Parsing users and setting watchers ..." 
 
-        @users = {}
-
         while (line = file.gets)
             user_id, repo_id = parse_data_line(line)
 
             user = create_or_find_user(user_id)
 
-            if @repos[repo_id]
-                user.repos << @repos[repo_id] 
-                @repos[repo_id].watchers << user
+            if repos[repo_id]
+                user.repos << repos[repo_id] 
+                repos[repo_id].watchers << user
             end
         end
 
@@ -174,6 +173,39 @@ class Hub
 
     end
 
+    def likely_similar_languages(base_lang)
+
+        possible = Set.new
+
+        # find users with the base lang as a favorite language
+        users_with_favorite_lang = users.values.select do |u|
+            u.favorite_language == base_lang
+        end
+
+        counts = {}
+
+        # collect possible langs
+        users_with_favorite_lang.each do |u|
+            u.get_language_usages.each do |usage|
+                lang = usage.lang
+                counts[lang] ||= 0
+                counts[lang] += 1
+            end
+        end
+
+        base_lang_count = counts[base_lang]
+        counts.delete(base_lang)
+
+        output = []
+
+        counts.each_pair do |k,v|
+            output << [k, v * 1.0 / base_lang_count]
+        end
+
+        output.sort_by { |o| o[1] }.reverse
+
+    end
+
     private
     
     def parse_data_line(line)
@@ -186,10 +218,12 @@ class Hub
 
         $stderr.puts "Setting repo sources ..." 
 
-        @repos.each_value do |value|
-            if value.source && value.source > 0 && @repos.has_key?(value.source)
+        repos.each_value do |value|
+            if value.source && value.source > 0 && repos.has_key?(value.source)
                 source_id = value.source
-                value.source = @repos[value.source]
+                value.source = repos[value.source]
+            else
+                value.source = nil
             end
         end
     end
@@ -200,7 +234,7 @@ class Hub
 
         sources = {}
         
-        @repos.each_value do |repo|
+        repos.each_value do |repo|
             if repo.source && repo.source.is_a?(Repo)
                 id = repo.source.id
                 sources[id] ||= []
@@ -209,7 +243,7 @@ class Hub
         end
 
         sources.each_pair do |source, forks|
-            @repos[source].forks = forks if @repos[source]
+            repos[source].forks = forks.to_set if repos[source]
         end
     end
 

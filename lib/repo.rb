@@ -1,5 +1,6 @@
 require 'lang'
 require 'owner'
+require 'set'
 
 class Repo
 
@@ -7,21 +8,20 @@ class Repo
 
     @@cache = {}
 
-    attr_accessor :id, :name, :source, :date, :forks, :langs, :watchers, :owner, :overlaps, :major_language, :major_lang_usage
+    attr_accessor :id, :name, :source, :date, :forks, :lang_usages, :watchers, :owner, :overlaps, :major_language, :major_lang_usage
 
     def initialize
     end
 
     def initialize(id = nil, name = nil, source = nil, date = nil)
-        fields ||= {}
 
         @id = id
         @name = name
         @source = source
         @date = date
-        @forks = []
-        @langs = []
-        @watchers = []
+        @forks = Set.new
+        @lang_usages = Set.new
+        @watchers = Set.new
         @owner = nil
         @overlaps = []
         @major_language = nil
@@ -33,7 +33,20 @@ class Repo
     end
 
     def <=>(other)
-        watchers.size <=> other.watchers.size
+
+        unless other.is_a?(Repo)
+            return -1
+        end
+
+        if watchers.is_a?(Array) && other.watchers.is_a?(Array)
+            return watchers.size <=> other.watchers.size
+        elsif watchers.is_a?(Array)
+            return -1
+        elsif other.watchers.is_a?(Array) 
+            return 1
+        else
+            return 0
+        end
     end
 
     #
@@ -55,11 +68,20 @@ class Repo
 
     end
 
+    def distance(num1, num2)
+        Math.sqrt((num1 - num2) ** 2 + (num2 - num1) ** 2)
+    end
+
     #
     # factor of similarity to another repository and provide
-    # additional tweaks based on the intended user
+    # additional tweaks based on the intended user via
+    # the special_repos variable
     #
     def similar(other, special_repos = [])
+
+        unless other.is_a?(Repo)
+            raise "Cannot compare a repo to a non-repo object"
+        end
 
         sim = 0.0
 
@@ -72,7 +94,7 @@ class Repo
 
                # provided an additional weighting by the closeness of number of lines
                unless mlang.lines == 0 && olang.lines == 0
-                   diff = mlang.lines > olang.lines ? olang.lines / mlang.lines : mlang.lines / olang.lines
+                   diff = distance(mlang.lines, olang.lines)
                    sim += 0.15 * diff
                end
            end
@@ -111,13 +133,17 @@ class Repo
         end
 
         unless special_repos.empty?
-            if special_repos.has_key?(self.id) && special_repos.has_key?(other.id)
-                sim += 0.7 * (special_repos[self.id] + special_repos[other.id])
+            if special_repos.has_key?(self) && special_repos.has_key?(other)
+                sim += 0.7 * (special_repos[self] + special_repos[other])
             end
         end
 
         sim
 
+    end
+
+    def calculate_owner_name
+        @name.split('/').first
     end
 
     def self.new_repo_from(line)
@@ -138,7 +164,7 @@ class Repo
             repos_from_owner[r.owner] << r
         end
 
-        repos_from_owner.values.collect { |v| v[0..count - 1] }.flatten
+        repos_from_owner.values.collect { |v| v[0..count - 1] }.flatten.to_set
 
     end
 end

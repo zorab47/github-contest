@@ -1,10 +1,13 @@
+
+require 'set'
+
 class Owner
 
     attr_accessor :name, :repos
 
     def initialize(name)
         @name = name
-        @repos = []
+        @repos = Set.new
     end
 
 end
