@@ -15,3 +15,10 @@ Factors I considered:
 * Popular repositories (both by number of watchers and number of forks)
 * Unwatched fork source repositories (as suggested by "cardmagic":http://github.com/cardmagic)
 
+h2. Running
+
+Using "JRuby":http://jruby.org is suggested as it allows threads to work on multiple CPUs, but the code executes just as well using the ruby 1.8 or ruby 1.9 interpreters. 
+
+To run the project and genereate a results.txt file in the current directory:
+
+bc. $ jruby attempt.rb
